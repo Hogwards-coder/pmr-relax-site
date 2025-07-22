@@ -1,0 +1,12 @@
+
+{
+  "title": "PMR Relaxation Site",
+  "theme": "light",
+  "audio": "assets/audio/audio1.mp3",
+  "backgrounds": [
+    "assets/images/background1.png",
+    "assets/images/background2.jpeg",
+    "assets/images/background3.jpg",
+    "assets/images/background4.jpg"
+  ]
+}

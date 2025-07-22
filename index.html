@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Flow: PMR Game</title>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-image: url('./assets/background1.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      color: #fff;
+      text-align: center;
+      margin: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 16px;
+      margin-top: 60px;
+    }
+    .hidden { display: none; }
+    .card {
+      background: rgba(255,255,255,0.1);
+      padding: 20px;
+      margin: 15px 0;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #f6c7b6;
+      color: #333;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    textarea {
+      width: 80%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: 1px solid #f6c7b6;
+      resize: none;
+    }
+    .quote {
+      font-style: italic;
+      margin: 10px 0;
+      color: #ffe;
+    }
+    .timer {
+      font-size: 24px;
+      margin: 10px;
+      color: #ffd;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Flow: Progressive Muscle Relaxation</h1>
+  <div id="startSection" class="card">
+    <p>Relax from your feet to your neck. Play every Wednesday.<br>Current Score: <span id="score">0</span></p>
+    <button onclick="startSession()">Start Session</button>
+    <button onclick="showHistory()">View History & Score</button>
+    <p id="message" style="color:#ffdfdf;"></p>
+  </div>
+
+  <div id="stepSection" class="hidden card">
+    <div class="quote" id="quote"></div>
+    <h2 id="stepTitle"></h2>
+    <p id="instruction"></p>
+    <div class="timer" id="countdown">5</div>
+    <button id="nextBtn" onclick="nextStep()" disabled>Next</button>
+  </div>
+
+  <div id="reflectionSection" class="hidden card">
+    <h2>Session Reflection</h2>
+    <textarea id="reflection" rows="4" placeholder="How do you feel now?"></textarea><br>
+    <button onclick="finishSession()">Save & Finish</button>
+  </div>
+
+  <div id="historySection" class="hidden card">
+    <h3>Your History</h3>
+    <div id="historyContent"></div>
+    <p>Total sessions played: <span id="totalScore"></span></p>
+    <button onclick="closeHistory()">Close</button>
+  </div>
+</div>
+
+<audio id="waveAudio" src="./assets/waves.mp3" loop></audio>
+<audio id="dreamAudio" src="./assets/dream.mp3"></audio>
+
+<script>
+const steps = [
+  { title:'Feet', text:'Curl your toes downward… hold… and relax.' },
+  { title:'Calves', text:'Point your toes upward… hold… and relax.' },
+  { title:'Thighs', text:'Squeeze your thigh muscles… hold… and relax.' },
+  { title:'Stomach', text:'Tighten your stomach… hold… and let go.' },
+  { title:'Lower back & hips', text:'Arch slightly… hold… and relax.' },
+  { title:'Chest', text:'Take a deep breath, tense… hold… and exhale.' },
+  { title:'Hands', text:'Clench your fists… hold… and release.' },
+  { title:'Forearms', text:'Tighten your forearms… hold… and relax.' },
+  { title:'Upper arms', text:'Flex your arms… hold… and relax.' },
+  { title:'Shoulders', text:'Shrug up to ears… hold… and drop.' },
+  { title:'Neck', text:'Gently press head back… hold… and relax.' }
+];
+
+const quotes = [
+  "Peace starts from within.",
+  "Breathe and be present.",
+  "Release what you can’t control.",
+  "Calm flows through you.",
+  "Small steps bring big peace."
+];
+
+let stepIndex = 0;
+let score = parseInt(localStorage.getItem('pmrScore') || '0');
+document.getElementById('score').innerText = score;
+
+function startSession() {
+  const today = new Date();
+  const day = today.getDay();
+  const lastPlayed = localStorage.getItem('pmrLastPlayed');
+  const todayStr = today.toLocaleDateString();
+
+  if (day !== 3) {
+    document.getElementById('message').innerText = 'Come back on Wednesday to play.';
+    return;
+  }
+  if (lastPlayed === todayStr) {
+    document.getElementById('message').innerText = 'Already played today! See you next Wednesday.';
+    return;
+  }
+
+  document.getElementById('startSection').classList.add('hidden');
+  document.getElementById('stepSection').classList.remove('hidden');
+  document.getElementById('waveAudio').play();
+  showStep();
+}
+
+function showStep() {
+  const step = steps[stepIndex];
+  document.getElementById('stepTitle').innerText = step.title;
+  document.getElementById('instruction').innerText = step.text;
+  document.getElementById('quote').innerText = quotes[Math.floor(Math.random() * quotes.length)];
+  document.getElementById('nextBtn').disabled = true;
+
+  let countdown = 5;
+  document.getElementById('countdown').innerText = countdown;
+  const timer = setInterval(() => {
+    countdown--;
+    document.getElementById('countdown').innerText = countdown;
+    if(countdown <= 0){
+      clearInterval(timer);
+      document.getElementById('nextBtn').disabled = false;
+    }
+  },1000);
+}
+
+function nextStep() {
+  document.getElementById('dreamAudio').play();
+  stepIndex++;
+  if (stepIndex < steps.length) {
+    showStep();
+  } else {
+    document.getElementById('stepSection').classList.add('hidden');
+    document.getElementById('reflectionSection').classList.remove('hidden');
+  }
+}
+
+function finishSession() {
+  const reflection = document.getElementById('reflection').value;
+  const history = JSON.parse(localStorage.getItem('pmrHistory') || '[]');
+  const date = new Date().toLocaleDateString();
+
+  history.push({ date, reflection });
+  localStorage.setItem('pmrHistory', JSON.stringify(history));
+
+  score++;
+  localStorage.setItem('pmrScore', score);
+  localStorage.setItem('pmrLastPlayed', date);
+
+  document.getElementById('score').innerText = score;
+  document.getElementById('reflectionSection').classList.add('hidden');
+  showHistory();
+}
+
+function showHistory() {
+  document.getElementById('dreamAudio').play();
+  document.body.style.backgroundImage = "url('./assets/background4.jpg')";
+  const history = JSON.parse(localStorage.getItem('pmrHistory') || '[]');
+  let html = history.length ? history.map(h => `<strong>${h.date}</strong><br>"${h.reflection}"`).join('<hr>') : 'No sessions yet.';
+  document.getElementById('historyContent').innerHTML = html;
+  document.getElementById('totalScore').innerText = score;
+  document.getElementById('historySection').classList.remove('hidden');
+}
+
+function closeHistory() {
+  document.body.style.backgroundImage = "url('./assets/background1.png')";
+  document.getElementById('historySection').classList.add('hidden');
+  document.getElementById('startSection').classList.remove('hidden');
+}
+</script>
+</body>
+</html>
